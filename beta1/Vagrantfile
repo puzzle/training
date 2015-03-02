@@ -1,0 +1,108 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'json'
+require 'yaml'
+require 'net/ssh'
+
+domain = "example.com"
+
+# First host must be the master
+hosts = [
+  { :name => "ose3-master", :ip => "172.22.22.22" },
+  { :name => "ose3-node1", :ip => "172.22.22.23" },
+  { :name => "ose3-node2", :ip => "172.22.22.24" },
+]
+
+hosts.each do |host|
+  host[:hostname] = "#{host[:name]}.#{domain}"
+end
+
+# Generate ssh keys for nodes, used to synchronize certificates between master and nodes
+if not File.exist?('.vagrant/ssh/id_rsa')
+  FileUtils.mkdir_p '.vagrant/ssh', :mode => 0700
+
+  key = OpenSSL::PKey::RSA.new 2048
+  type = key.public_key.ssh_type
+  data = [ key.public_key.to_blob ].pack('m0')
+  ssh_key = { 'openshift3::ssh_key' => { 'name' => 'ose3', 'type' => type, 'key' => data } }
+
+  File.open('.vagrant/ssh/id_rsa', 'w', 0600) do |file|
+    file.write key.to_pem
+  end
+
+  File.open('.vagrant/ssh/id_rsa.pub', 'w', 0600) do |file|
+    file.write "#{type} #{data}"
+  end
+
+  File.open('puppet/hiera/ssh.yaml', 'w', 0600) do |file|
+    file.write ssh_key.to_yaml
+  end
+end
+
+Vagrant.configure(2) do |config|
+  
+  config.registration.subscriber_username = config.user.registration.subscriber_username
+  config.registration.subscriber_password = config.user.registration.subscriber_password
+
+  config.vm.box = "rhel71-beta"
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.driver = "kvm"
+    # leave out host to connect directly with qemu:///system
+#   libvirt.host = "localhost"
+    libvirt.connect_via_ssh = false
+    libvirt.username = "root"
+    libvirt.storage_pool_name = config.user.libvirt.storage_pool_name if config.user.has_key?('libvirt') and config.user['libvirt'].has_key?('storage_pool_name')
+    libvirt.memory = 4096
+    libvirt.cpus = 4
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    if ! test -e /.subscribed; then
+      sudo subscription-manager remove --all
+      sudo subscription-manager attach --pool="#{config.user.registration.subscription_pool}"
+      sudo subscription-manager repos --disable="*"
+      sudo subscription-manager repos --enable="rhel-7-server-beta-rpms" --enable="rhel-7-server-extras-rpms" --enable="rhel-server-7-ose-beta-rpms"
+
+      sudo yum update -y
+
+      sudo touch /.subscribed
+    fi
+
+    # Remove username from hostname after registering because vagrant-register doesn't yet support setting the system name
+    hostname=`hostname | sed -e 's/-#{ENV['USER']}\\././'`
+    if [ "${HOSTNAME}" != "${hostname}" ]; then
+      echo "Changing hostname to $hostname"
+      sudo hostnamectl set-hostname $hostname
+      sed -i -e 's/-#{ENV['USER']}\\(\\.\\| \\)/\\1/g' /etc/hosts
+    fi
+
+    sudo puppet module install garethr/docker
+    sudo puppet module install lex/dnsmasq
+    sudo puppet module install saz/resolv_conf
+    sudo puppet module install puppetlabs/rsync
+  SHELL
+
+  hosts.each do |host|
+    config.vm.define host[:name] do |vmconfig|
+      vmconfig.vm.hostname = "#{host[:name]}-#{ENV['USER']}.#{domain}"
+      vmconfig.vm.network :private_network,
+        :ip => host[:ip],
+        :libvirt__network_name => "openshift3"
+    end    
+  end
+
+  config.vm.provision :puppet do |puppet|
+    puppet.module_path = [ "puppet/modules" ]
+    puppet.manifests_path = "puppet/manifests"
+    puppet.manifest_file = "site.pp"
+    puppet.hiera_config_path = "puppet/hiera.yaml"
+    puppet.working_directory = "/tmp/vagrant-puppet"
+    puppet.facter = {
+      "vagrant" => "1",
+      "ose_hosts" => hosts.to_json,
+    }
+  end
+
+end

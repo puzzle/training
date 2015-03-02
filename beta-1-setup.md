@@ -1341,3 +1341,79 @@ to limit some of what it returns:
     Until the point that the node is actually added to the master,
     `openshift-sdn-master` has not allocated a subnet. Hence, this error will
     persist until the node is added.
+
+# APPENDIX - Vagrant and Puppet
+The following documentation assumes that you are using a Linux host with KVM virtualization
+However, with some Vagrant knowledge it should be possible to adapt the provided `Vagrantfile`
+to other operating systems and hypervisors.
+The `beta1` folder contains the neccessary files to automatically setup up to 3
+virtual machines using Vagrant and installing OpenShift Enterprise 3 Beta 1 into them
+as described in this document using Puppet. Additionaly a DNS server is installed and
+configured in the VM that contains the OSE 3 master. Please note that no applications
+are automatically installed into this OpenShift Enteprise 3 environment.
+
+## Installing and configuring Vagrant
+To use this you need to install Vagrant: http://docs.vagrantup.com/v2/installation/
+and the followind Vagrant Plugins:
+
+  * nugrant, for managing user specific Vagrant configuration
+
+        $ vagrant plugin install nugrant
+
+  * vagrant-libvirt, allows Vagrant to work with libvirt/kvm
+
+        $ vagrant plugin install vagrant-libvirt
+
+  * vagrant-registration, for registering/unregistering Vagrant VMs with Red Hat Subcription Management
+
+        $ vagrant plugin install vagrant-registration
+
+To avoid adding --provider=libvirt to all vagrant operations add the following line to the `.bashrc` file
+in your home directory:
+
+    export VAGRANT_DEFAULT_PROVIDER=libvirt
+
+and source it:
+
+    $ . ~/.bashrc
+
+After installation you need to switch to the `beta1` directory and copy `vagrantuser.example` to
+`.vagrantuser` and change *subscriber_username*, *subscriber_password* and *subscription_pool*
+according to your OpenShift 3 High Touch Beta subscription.
+
+## Creating a RHEL 7.1 Beta Vagrant Box
+
+Before you can create a virtual machine you need a RHEL 7.1 Beta base image, a so called box. Because
+RHEL is protected by trade marks and can't be freely distributed you have to build one yourself:
+
+TODO: describe how to build the box if it's not possible to share with other participants of the
+beta program.
+
+## Creating OpenShift Enterprise 3 Beta Virtual Machines
+
+Now you should be able to create an OpenShift Enterprise 3 Beta 1 Virtual Machine by executing:
+
+    $ cd beta1
+    $ vagrant up ose3-master
+
+It will take several minutes to install everything. Please note that there will be no feedback in the last
+part of the installation after the docker service has been started. At this point several docker images
+are beeing downloaded, which can take several minutes. You can add up to two additional OSE 3 nodes by executing:
+
+    $ vagrant up ose3-node1
+
+and/or
+
+    $ vagrant up ose3-node2
+
+They will be automatically connected to the master. Please note that each VM requires 4 GB of RAM.
+
+The provided `Vagrantfile` uses the same host names that are used in this document. So you should be able
+to install the given sample applications without change. In order to access the applications from your host
+you have to add the following line to your `/etc/resolv.conf` file:
+
+    nameserver 172.22.22.22
+
+172.22.22.22 is the ip address of the virtual machine containing the OSE 3 Beta 1 master and the DNS server.
+Don't forget to remove the line after you shut down the master virtual machine, or you will experience delays with
+DNS lookups on your host.
