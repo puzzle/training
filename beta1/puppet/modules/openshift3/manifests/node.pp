@@ -44,7 +44,7 @@ class openshift3::node {
     owner  => 'root',
     group  => 'root',
     mode   => 0600,
-    source => '/vagrant/.vagrant/ssh/id_rsa',
+    source => '/vagrant/.ssh/id_rsa',
   }
 
   file { '/root/.ssh/id_rsa.pub':
@@ -52,7 +52,7 @@ class openshift3::node {
     owner  => 'root',
     group  => 'root',
     mode   => 0600,
-    source => '/vagrant/.vagrant/ssh/id_rsa.pub',
+    source => '/vagrant/.ssh/id_rsa.pub',
   }
 
   rsync::get { '/var/lib/openshift':

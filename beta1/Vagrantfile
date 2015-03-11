@@ -19,19 +19,19 @@ hosts.each do |host|
 end
 
 # Generate ssh keys for nodes, used to synchronize certificates between master and nodes
-if not File.exist?('.vagrant/ssh/id_rsa')
-  FileUtils.mkdir_p '.vagrant/ssh', :mode => 0700
+if not File.exist?('.ssh/id_rsa')
+  FileUtils.mkdir_p '.ssh', :mode => 0700
 
   key = OpenSSL::PKey::RSA.new 2048
   type = key.public_key.ssh_type
   data = [ key.public_key.to_blob ].pack('m0')
   ssh_key = { 'openshift3::ssh_key' => { 'name' => 'ose3', 'type' => type, 'key' => data } }
 
-  File.open('.vagrant/ssh/id_rsa', 'w', 0600) do |file|
+  File.open('.ssh/id_rsa', 'w', 0600) do |file|
     file.write key.to_pem
   end
 
-  File.open('.vagrant/ssh/id_rsa.pub', 'w', 0600) do |file|
+  File.open('.ssh/id_rsa.pub', 'w', 0600) do |file|
     file.write "#{type} #{data}"
   end
 
