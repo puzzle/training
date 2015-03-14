@@ -7,5 +7,5 @@ registration:
   subscription_pool: a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0
 
 # Alternate libivirt storage pool, optional
-libvirt:
-  storage_pool_name: images
+# libvirt:
+#   storage_pool_name: default
