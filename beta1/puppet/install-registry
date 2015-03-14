@@ -1,5 +1,7 @@
 #! /bin/bash
 
+. /root/.bash_profile
+
 openshift ex config use-context master-admin
 
 CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
