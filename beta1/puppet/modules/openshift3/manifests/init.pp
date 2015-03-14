@@ -64,6 +64,15 @@ class openshift3 ($ssh_key = undef) {
     source => "puppet:///modules/openshift3/root/.bash_profile",
   }
 
+  file { '/etc/hosts':
+    ensure  => present,
+    owner  => 'root',
+    group  => 'root',
+    mode   => 0644,
+    content => template("openshift3/etc/hosts.erb"),
+    before => Service['network'],
+  }
+
   if defined(Service['dnsmasq']) {
     $resolv_require = [ Service['dnsmasq'] ]
   } else {
@@ -77,16 +86,30 @@ class openshift3 ($ssh_key = undef) {
   }
 
   class { 'docker':
-    extra_parameters => "--insecure-registry $::network_eth1/$::netmask_eth1",
-#    socket_bind => 'fd://',
+    extra_parameters => "--insecure-registry 0.0.0.0/0 --selinux-enabled",
   }
 
-  docker::image { 'registry.access.redhat.com/openshift3_beta/ose-haproxy-router': }
-  docker::image { 'registry.access.redhat.com/openshift3_beta/ose-deployer': }
-  docker::image { 'registry.access.redhat.com/openshift3_beta/ose-sti-builder': }
-  docker::image { 'registry.access.redhat.com/openshift3_beta/ose-docker-builder': }
-  docker::image { 'registry.access.redhat.com/openshift3_beta/ose-pod': }
-  docker::image { 'registry.access.redhat.com/openshift3_beta/ose-docker-registry': }
+  exec { 'Import docker images':
+    cwd     => "/vagrant",
+    command => "/vagrant/puppet/import-docker",
+    creates => "/.docker_imported",
+    timeout => 1000,
+    require => Service['docker'],
+  }
+
+  docker::image { [
+    'registry.access.redhat.com/openshift3_beta/ose-haproxy-router',
+    'registry.access.redhat.com/openshift3_beta/ose-deployer',
+    'registry.access.redhat.com/openshift3_beta/ose-sti-builder',
+    'registry.access.redhat.com/openshift3_beta/ose-docker-builder',
+    'registry.access.redhat.com/openshift3_beta/ose-pod',
+    'registry.access.redhat.com/openshift3_beta/ose-docker-registry',
+    'openshift/ruby-20-centos',
+    'mysql',
+    'openshift/hello-openshift',
+    ]:
+    require => Exec['Import docker images'],
+  }
 
   ssh_authorized_key { "${ssh_key[name]}":
     user => 'root',

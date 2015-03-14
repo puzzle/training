@@ -35,6 +35,7 @@ class openshift3::master {
     ensure => running,
     enable => true,
     require => [ Package['openshift-sdn-master'], Service['openvswitch'] ],
+    before => Service['openshift-sdn-node'],
   }
 
   exec { 'Install router':
@@ -42,8 +43,7 @@ class openshift3::master {
     command => "/vagrant/puppet/install-router",
     creates => "/.router_installed",
     timeout => 600,
-    require => [Service['openvswitch'], Service['openshift-sdn-master'], Service['openshift-master'], Service['docker'], Docker::Image['registry.access.redhat.com/openshift3_beta/ose-haproxy-router']],
-#    require => [Service['openvswitch'], Service['openshift-sdn-master'], Service['openshift-sdn-node'], Service['openshift-master'], Service['docker'], Docker::Image['registry.access.redhat.com/openshift3_beta/ose-haproxy-router']],
+    require => [Class['openshift3'], Service['openshift-sdn-master']],
   }
 
   exec { 'Install registry':
@@ -51,7 +51,6 @@ class openshift3::master {
     command => "/vagrant/puppet/install-registry",
     creates => "/.registry_installed",
     timeout => 600,
-    require => [Docker::Image['registry.access.redhat.com/openshift3_beta/ose-docker-registry'], Exec['Install router']],
-#    require => [Service['openvswitch'], Service['openshift-sdn-master'], Service['openshift-sdn-node'], Service['openshift-master'], Service['docker'], Docker::Image['registry.access.redhat.com/openshift3_beta/ose-haproxy-router']],
+    require => [Class['openshift3'], Service['openshift-sdn-master'], Exec['Install router']],
   }
 }
