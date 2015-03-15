@@ -1,0 +1,4 @@
+.vagrant*
+.ssh
+.docker
+beta1-images.tar

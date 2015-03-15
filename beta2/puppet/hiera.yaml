@@ -1,0 +1,9 @@
+---
+:backends:
+  - yaml
+
+:hierarchy:
+  - "ssh"
+
+:yaml:
+  :datadir: '/vagrant/puppet/hiera'

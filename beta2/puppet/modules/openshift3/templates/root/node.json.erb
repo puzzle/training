@@ -1,0 +1,21 @@
+{
+  "metadata":{
+    "name":"add-<%= @hostname %>"
+  },
+  "kind":"Config",
+  "apiVersion":"v1beta1",
+  "creationTimestamp":"<%= Time.now.strftime("%Y-%m-%dT%H:%M:%S%z") %>",
+  "items":[
+    {
+      "id": "<%= @fqdn %>",
+      "kind": "Node",
+      "apiVersion": "v1beta1",
+      "resources": {
+        "capacity": {
+          "cpu": 1,
+          "memory": <%= ( @memoryfree_mb.to_i * 1024 * 1024 * 0.8 ).to_i %>
+        },
+      },
+    }
+  ]
+}

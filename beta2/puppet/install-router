@@ -1,0 +1,12 @@
+#! /bin/bash
+
+# Don't overwrite router.json template as the modification might be shared with the Vagrant host.
+mkdir tmp
+cp router.json tmp
+pushd .
+cd tmp
+
+OPENSHIFT_CA_DATA=$(</var/lib/openshift/openshift.local.certificates/master/root.crt) /bin/bash ../install-router.sh mainrouter https://${HOSTNAME}:8443 && touch /.router_installed
+
+popd
+rm -rf tmp
