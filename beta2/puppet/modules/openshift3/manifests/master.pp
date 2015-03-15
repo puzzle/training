@@ -106,10 +106,10 @@ class openshift3::master {
   }
 
   exec { 'Install router':
-#    provider => 'shell',
+    provider => 'shell',
     cwd     => "/root",
     command => "openshift ex router --create --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'",
-    unless => "bash -l -c 'openshift ex router >/dev/null'",
+    unless => "HOME=/root openshift ex router",
     timeout => 600,
     require => [Class['openshift3'], Exec['Run ansible']],
   }
