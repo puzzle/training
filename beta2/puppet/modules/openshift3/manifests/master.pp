@@ -107,10 +107,21 @@ class openshift3::master {
 
   exec { 'Install router':
     provider => 'shell',
+    environment => 'HOME=/root',
     cwd     => "/root",
     command => "openshift ex router --create --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'",
-    unless => "HOME=/root openshift ex router",
+    unless => "openshift ex router",
     timeout => 600,
     require => [Class['openshift3'], Exec['Run ansible']],
+  }
+
+  exec { 'Install registry':
+    provider => 'shell',
+    environment => 'HOME=/root',
+    cwd     => "/root",
+    command => "openshift ex registry --create --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'",
+    unless => "osc describe service docker-registry",
+    timeout => 600,
+    require => Exec['Install router'],
   }
 }

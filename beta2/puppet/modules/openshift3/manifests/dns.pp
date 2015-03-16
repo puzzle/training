@@ -26,4 +26,20 @@ class openshift3::dns {
     notify => Service['network'],
     require => Service['dnsmasq'],
   }
+
+  firewall { '500 Allow UDP DNS requests':
+    action => 'accept',
+    state  => 'NEW',
+    dport  => [53],
+    proto  => 'udp',
+    before => Service['dnsmasq'],
+  }
+
+  firewall { '501 Allow TCP DNS requests':
+    action => 'accept',
+    state  => 'NEW',
+    dport  => [53],
+    proto  => 'tcp',
+    before => Service['dnsmasq'],
+  }
 }

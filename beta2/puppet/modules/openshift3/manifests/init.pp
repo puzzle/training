@@ -101,7 +101,7 @@ class openshift3 ($ssh_key = undef) {
   }
 
   class { 'docker':
-    extra_parameters => "--insecure-registry 0.0.0.0/0 -b=lbr0 --mtu=1450 --selinux-enabled",
+    extra_parameters => "--insecure-registry 0.0.0.0/0 --selinux-enabled",
   }
 
   exec { 'Import docker images':

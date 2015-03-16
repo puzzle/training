@@ -76,6 +76,7 @@ Vagrant.configure(2) do |config|
     sudo puppet module install saz/resolv_conf
     sudo puppet module install puppetlabs/rsync
     sudo puppet module install puppetlabs/vcsrepo
+    sudo puppet module install puppetlabs/firewall
     sudo puppet module install leinaddm/htpasswd
   SHELL
 
