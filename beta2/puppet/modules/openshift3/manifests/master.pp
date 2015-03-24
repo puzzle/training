@@ -60,6 +60,11 @@ class openshift3::master {
     notify => Service['openshift-master'],
   }
 
+  exec {"Wait for master":
+    require => Service["openshift-master"],
+    command => "/usr/bin/wget --spider --tries 30 --retry-connrefused --no-check-certificate https://localhost:8444/",
+  }
+
   exec { 'Install router':
     provider => 'shell',
     environment => 'HOME=/root',
@@ -67,7 +72,7 @@ class openshift3::master {
     command => "openshift ex router --create --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig --images='registry.access.redhat.com/openshift3_beta/ose-\${component}:\${version}'",
     unless => "openshift ex router",
     timeout => 600,
-    require => [Service['openshift-master'], Exec['Run ansible']],
+    require => [Service['openshift-master'], Exec['Run ansible'], Exec['Wait for master']],
   }
 
   exec { 'Install registry':
