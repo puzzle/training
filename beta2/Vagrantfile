@@ -78,7 +78,7 @@ Vagrant.configure(2) do |config|
 #    sudo puppet module list >/tmp/puppet-module-list
 
     sudo puppet module install garethr/docker
-    sudo puppet module install lex/dnsmasq
+    sudo puppet module install lex/dnsmasq 2>/dev/null
     sudo puppet module install saz/resolv_conf
     sudo puppet module install puppetlabs/rsync
     sudo puppet module install puppetlabs/vcsrepo
