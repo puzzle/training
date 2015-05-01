@@ -472,8 +472,8 @@ to look at some example JSON for project resource quota might look like:
           "pods": "3",
           "services": "3",
           "replicationcontrollers":"4",
-          "resourcequotas":"1",
-        },
+          "resourcequotas":"1"
+        }
       }
     }
 
@@ -1182,7 +1182,7 @@ Hint: you need to edit the `serviceName` field.
 When you are done, create your route:
 
     osc create -f sinatra-route.json
-    a8b8c72b-b07c-11e4-b390-525400b33d1d
+    sinatra-route
 
 Check to make sure it was created:
 
@@ -1203,7 +1203,7 @@ Currently the STI process involves a pod that is created to build your code
 Right now, OpenShift doesn't "clean up" after the build process - pods that were
 generated to build your application code will stick around. If you do a few
 builds, and go to the *Settings* tab for the *Sinatra* project, you'll see that
-you can reach or exceed your pod quote (3). These issues are understood and will
+you can reach or exceed your pod quota (3). These issues are understood and will
 be fixed.
 
 Since we are not doing anything else with the *Sinatra* project, we can ignore
@@ -1260,7 +1260,7 @@ For example, take a look at the following JSON:
       },
 
 This portion of the template's JSON tells OpenShift to generate an expression
-using a regex-like string that will be presnted as ADMIN_USERNAME.
+using a regex-like string that will be presented as ADMIN_USERNAME.
 
 Go ahead and do the following as `joe`:
 
@@ -1272,7 +1272,7 @@ parameters are placed into the actual processable config. If you look closely,
 you'll see that some of these items are passed into the "env" of the container
 -- they're passed in as environment variables inside the Docker container.
 
-If the application or container is built correctly, it's various processes will
+If the application or container is built correctly, its various processes will
 use these environment variables. In this example, the front-end will use the
 information about where the back-end is, as well as user and password
 information that was generated.
@@ -1733,9 +1733,8 @@ image:
 
     https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
 
-We've taken the content of this subfolder and placed it in the `beta2/wordpress`
-folder in the `training` repository. Let's run `ex generate` and see what
-happens:
+We've taken the content of this subfolder and created a new Github repository
+for it. Let's run `ex generate` and see what happens:
 
     openshift ex generate --name=wordpress \
     https://github.com/openshift/centos7-wordpress.git | python -m json.tool
