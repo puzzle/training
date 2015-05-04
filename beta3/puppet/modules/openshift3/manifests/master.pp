@@ -1,9 +1,19 @@
 class openshift3::master {
   include ::openshift3
-  include ::openshift3::dns
 
-  $ose_hosts = parsejson($::ose_hosts)
-  $master_fqdn = $ose_hosts[0]['hostname']
+  if $::vagrant {
+    include ::openshift3::dns
+
+    user { ['joe', 'alice' ]:
+      ensure => present,
+      managehome => true,
+    }
+
+    htpasswd { ['joe', 'alice']:
+      cryptpasswd => ht_sha1('redhat'),
+      target      => '/etc/openshift-passwd',
+    }
+  }
 
   vcsrepo { "/root/openshift-ansible":
     ensure   => latest,
@@ -30,16 +40,6 @@ class openshift3::master {
     command => "ansible-playbook playbooks/byo/config.yml",
     timeout => 1000,
     require => [Class['openshift3'], Service['docker'], Package['ansible'], File['/root/.ssh/id_rsa'], Ssh_Authorized_Key['ose3'], Augeas['ansible.cfg']],
-  }
-
-  user { ['joe', 'alice' ]:
-    ensure => present,
-    managehome => true,
-  }
-
-  htpasswd { ['joe', 'alice']:
-    cryptpasswd => ht_sha1('redhat'),
-    target      => '/etc/openshift-passwd',
   }
 
   service { 'openshift-master':

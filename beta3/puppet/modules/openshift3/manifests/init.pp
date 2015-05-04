@@ -1,6 +1,4 @@
 class openshift3 ($ssh_key = undef) {
-  $ose_hosts = parsejson($::ose_hosts)
-
   stage { 'first':
     before => Stage['main'],
   }
@@ -115,9 +113,11 @@ class openshift3 ($ssh_key = undef) {
     require => Exec['Import docker images'],
   }
 
-  ssh_authorized_key { "${ssh_key[name]}":
-    user => 'root',
-    type => $ssh_key[type],
-    key  => $ssh_key[key],
+  if defined('$ssh_key') {
+    ssh_authorized_key { "${ssh_key[name]}":
+      user => 'root',
+      type => $ssh_key[type],
+      key  => $ssh_key[key],
+    }
   }
 }

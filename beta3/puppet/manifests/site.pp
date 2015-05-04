@@ -6,8 +6,7 @@ Package {
 
 node 'ose3-master.example.com' {
   include openshift3::master
-
-  class { 'openshift3::node': is_master => true }
+  include openshift3::node
 }
 
 node /ose3-node\d+.example.com/ {
