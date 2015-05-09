@@ -91,8 +91,9 @@ class openshift3 ($ssh_key = undef) {
   }
 
   exec { 'Import docker images':
-    cwd     => "/vagrant",
-    command => "/vagrant/puppet/import-docker",
+#    cwd     => "/vagrant",
+#    command => "/vagrant/puppet/import-docker",
+    command => "/bin/true",
     creates => "/.docker_imported",
     timeout => 1000,
     require => Service['docker'],
@@ -113,7 +114,7 @@ class openshift3 ($ssh_key = undef) {
     require => Exec['Import docker images'],
   }
 
-  if defined('$ssh_key') {
+  if $::vagrant {
     ssh_authorized_key { "${ssh_key[name]}":
       user => 'root',
       type => $ssh_key[type],

@@ -23,23 +23,37 @@ class openshift3::master {
   }
 
   file { "/etc/ansible":
-    source  => "file:///vagrant/ansible",
-    recurse => true,
+    ensure => "directory",
+    owner  => "root",
+    group  => "root",
+    mode   => 755,
+  }
+
+  file { "/etc/ansible/hosts":
+    content => template("openshift3/ansible/hosts.erb"),
     require => Package['ansible'],
+    owner  => "root",
+    group  => "root",
+    mode   => 644,
   }
 
   augeas { "ansible.cfg":
     lens    => "Puppet.lns",
     incl    => "/root/openshift-ansible/ansible.cfg",
     changes => "set /files/root/openshift-ansible/ansible.cfg/defaults/host_key_checking False",
-    require => File['/etc/ansible'],
+    require => Vcsrepo['/root/openshift-ansible'],
   }
+
+   $ansible_require = [Class['openshift3'], Service['docker'], Package['ansible'],Augeas['ansible.cfg']]
+   if $::vagrant {
+      $ansible_require += File['/root/.ssh/id_rsa'] + Ssh_Authorized_Key['ose3']
+    }
 
   exec { 'Run ansible':
     cwd     => "/root/openshift-ansible",
     command => "ansible-playbook playbooks/byo/config.yml",
     timeout => 1000,
-    require => [Class['openshift3'], Service['docker'], Package['ansible'], File['/root/.ssh/id_rsa'], Ssh_Authorized_Key['ose3'], Augeas['ansible.cfg']],
+    require => $ansible_require,
   }
 
   service { 'openshift-master':

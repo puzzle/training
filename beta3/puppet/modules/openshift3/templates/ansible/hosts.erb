@@ -14,11 +14,11 @@ ansible_ssh_user=root
 
 # host group for masters
 [masters]
-victory.rz.puzzle.ch
+<%= @master_fqdn %>
 #ose3-master.example.com
 
 # host group for nodes
 [nodes]
-victory.rz.puzzle.ch
+<%= @master_fqdn %>
 #ose3-master.example.com
 #ose3-node[1:2].example.com
