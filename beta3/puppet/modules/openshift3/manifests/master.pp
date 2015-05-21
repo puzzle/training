@@ -44,16 +44,26 @@ class openshift3::master {
     require => Vcsrepo['/root/openshift-ansible'],
   }
 
-   $ansible_require = [Class['openshift3'], Service['docker'], Package['ansible'],Augeas['ansible.cfg']]
+   $_ansible_require = [Class['openshift3'], Service['docker'], Package['ansible'],Augeas['ansible.cfg']]
    if $::vagrant {
-      $ansible_require += File['/root/.ssh/id_rsa'] + Ssh_Authorized_Key['ose3']
-    }
+      $ansible_require = concat($_ansible_require, File['/root/.ssh/id_rsa'], Ssh_Authorized_Key['ose3'])
+   } else {
+      $ansible_require = $_ansible_require
+   }
 
   exec { 'Run ansible':
     cwd     => "/root/openshift-ansible",
     command => "ansible-playbook playbooks/byo/config.yml",
     timeout => 1000,
     require => $ansible_require,
+  }
+
+  exec { 'Edit master.yaml':
+    cwd     => "/etc/openshift",
+    command => "sed -i -e 's/name: anypassword/name: apache_auth/' -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' -e '/kind: HTPasswdPasswordIdentityProvider/i \\      file: \\/etc\\/openshift-passwd' /etc/openshift/master.yaml",
+    timeout => 60,
+    require => Exec['Run ansible'],
+    notify => Service['openshift-master'],
   }
 
   service { 'openshift-master':

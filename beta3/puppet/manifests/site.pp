@@ -5,8 +5,8 @@ Exec { path => '/sbin:/bin:/usr/sbin:/usr/bin', }
 #}
 
 if $::vagrant {
-  $ose_hosts = parsejson($::ose_hosts)
-  $master_fqdn = $ose_hosts[0]['hostname']
+  $_ose_hosts = parsejson($::ose_hosts)
+  $master_fqdn = $_ose_hosts[0]['hostname']
 } else {
   $master_fqdn = 'victory.rz.puzzle.ch'
 }
