@@ -3786,8 +3786,8 @@ Each host will be created with an 'openshift' user that has passwordless sudo co
 The following documentation assumes that you are using a Linux host with KVM virtualization
 However, with some Vagrant knowledge it should be possible to adapt the provided `Vagrantfile`
 to other operating systems and hypervisors.
-The `beta2` folder contains the neccessary files to automatically setup up to 3
-virtual machines using Vagrant and installing OpenShift Enterprise 3 Beta 2 into them
+The `beta3` folder contains the neccessary files to automatically setup up to 3
+virtual machines using Vagrant and installing OpenShift Enterprise 3 Beta 3 into them
 as described in this document using Puppet. Additionaly a DNS server is installed and
 configured in the VM that contains the OSE 3 master. Please note that no applications
 are automatically installed into this OpenShift Enteprise 3 environment.
@@ -3821,7 +3821,7 @@ and source it:
 
     $ . ~/.bashrc
 
-After installation you need to switch to the `beta2` directory and copy `vagrantuser.example` to
+After installation you need to switch to the `beta3` directory and copy `vagrantuser.example` to
 `.vagrantuser` and change *subscriber_username*, *subscriber_password* and *subscription_pool*
 according to your OpenShift 3 High Touch Beta subscription.
 
@@ -3835,9 +3835,9 @@ beta program.
 
 ## Creating OpenShift Enterprise 3 Beta Virtual Machines
 
-Now you should be able to create an OpenShift Enterprise 3 Beta 2 Virtual Machine by executing:
+Now you should be able to create an OpenShift Enterprise 3 Beta 3 Virtual Machine by executing:
 
-    $ cd beta2
+    $ cd beta3
     $ vagrant up ose3-master
 
 It will take several minutes to install everything. Please note that there will be no feedback in the last
@@ -3858,6 +3858,6 @@ you have to add the following line to your `/etc/resolv.conf` file:
 
     nameserver 172.22.22.22
 
-172.22.22.22 is the ip address of the virtual machine containing the OSE 3 Beta 2 master and the DNS server.
+172.22.22.22 is the ip address of the virtual machine containing the OSE 3 Beta 3 master and the DNS server.
 Don't forget to remove the line after you shut down the master virtual machine, or you will experience delays with
 DNS lookups on your host.
