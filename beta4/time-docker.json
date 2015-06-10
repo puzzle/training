@@ -1,0 +1,128 @@
+{
+    "kind": "List",
+    "creationTimestamp": null,
+    "apiVersion": "v1beta1",
+    "items": [
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "quickstart-openshift-time",
+                "creationTimestamp": null
+            },
+            "spec": {},
+            "status": {
+                "dockerImageRepository": ""
+            }
+        },
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "quickstart-openshift-time",
+                "creationTimestamp": null
+            },
+            "triggers": [
+                {
+                    "type": "github",
+                    "github": {
+                        "secret": "deoSi2HUGRnFec28sxUG"
+                    }
+                },
+                {
+                    "type": "generic",
+                    "generic": {
+                        "secret": "hCnBzlBOi3mv2ia6ZSIc"
+                    }
+                }
+            ],
+            "parameters": {
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "https://github.com/puzzle/quickstart-openshift-time.git",
+                        "ref": "master"
+                    }
+                },
+                "strategy": {
+                  "type": "Custom",
+                  "customStrategy": {
+                    "image": "library/puzzle-ose3-docker-builder:latest",
+                    "exposeDockerSocket": true,
+                    "env": [
+                      { "name": "EXPOSE_PORT", "value": "8080" },
+                      { "name": "ARTIFACTORY_USER", "value": "jenkins-artifactory" },
+                      { "name": "ARTIFACTORY_PASSWORD", "value": "AP7BggQrKNJoJcpsrzgGvUsWDbq" },
+                      { "name": "ARTIFACT", "value": "com.puzzleitc.quickstarts:openshift-time:RELEASE:war" }
+                    ]
+                  }
+                },
+                "output": {
+                    "to": {
+                        "name": "quickstart-openshift-time"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "quickstart-openshift-time",
+                "creationTimestamp": null
+            },
+            "triggers": [
+                {
+                    "type": "ConfigChange"
+                },
+                {
+                    "type": "ImageChange",
+                    "imageChangeParams": {
+                        "automatic": true,
+                        "containerNames": [
+                            "quickstart-openshift-time"
+                        ],
+                        "from": {
+                            "name": "quickstart-openshift-time"
+                        },
+                        "tag": "latest",
+                        "lastTriggeredImage": ""
+                    }
+                }
+            ],
+            "template": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "controllerTemplate": {
+                    "replicas": 1,
+                    "replicaSelector": {
+                        "deploymentconfig": "quickstart-openshift-time"
+                    },
+                    "podTemplate": {
+                        "desiredState": {
+                            "manifest": {
+                                "version": "v1beta2",
+                                "id": "",
+                                "volumes": null,
+                                "containers": [
+                                    {
+                                        "name": "quickstart-openshift-time",
+                                        "image": "library/quickstart-openshift-time:latest",
+                                        "resources": {},
+                                        "imagePullPolicy": "",
+                                        "capabilities": {}
+                                    }
+                                ],
+                                "restartPolicy": {}
+                            }
+                        },
+                        "labels": {
+                            "deploymentconfig": "quickstart-openshift-time"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

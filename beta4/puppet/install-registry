@@ -1,0 +1,11 @@
+#! /bin/bash
+
+. /root/.bash_profile
+
+openshift ex config use-context master-admin
+
+CERT_DIR=/var/lib/openshift/openshift.local.certificates/master \
+KUBERNETES_MASTER=https://${HOSTNAME}:8443 \
+CONTAINER_ACCESSIBLE_API_HOST=${HOSTNAME} \
+/bin/bash ./install-registry.sh && \
+touch /.registry_installed

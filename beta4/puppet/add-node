@@ -1,0 +1,5 @@
+#! /bin/bash
+
+. /root/.bash_profile
+
+osc create -f /root/node.json
