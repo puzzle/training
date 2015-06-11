@@ -89,21 +89,38 @@ class openshift3::master {
     command => "/usr/bin/wget --spider --tries 30 --retry-connrefused --no-check-certificate https://localhost:8443/",
   }
 
+  exec { "Create wildcard certificate":
+    provider => 'shell',
+    environment => ['HOME=/root', 'CA=/etc/openshift/master'],
+    cwd     => "/root",
+    command => "osadm create-server-cert --signer-cert=\$CA/ca.crt \
+      --signer-key=\$CA/ca.key --signer-serial=\$CA/ca.serial.txt \
+      --hostnames='*.cloudapps.example.com' \
+      --cert=cloudapps.crt --key=cloudapps.key && cat cloudapps.crt cloudapps.key \$CA/ca.crt > cloudapps.router.pem",
+    creates => '/root/cloudapps.router.pem',
+    require => [Service['openshift-master'], Exec['Run ansible'], Exec['Wait for master']],
+  }
+
   exec { 'Install router':
     provider => 'shell',
     environment => 'HOME=/root',
     cwd     => "/root",
-    command => "osadm router --create --credentials=/etc/openshift/master/openshift-router.kubeconfig --images='registry.access.redhat.com/openshift3_beta/ose-\${component}:\${version}'",
+    command => "osadm router --default-cert=cloudapps.router.pem \
+--credentials=/etc/openshift/master/openshift-router.kubeconfig \
+--images='registry.access.redhat.com/openshift3_beta/ose-\${component}:\${version}'",
     unless => "osadm router",
     timeout => 600,
-    require => [Service['openshift-master'], Exec['Run ansible'], Exec['Wait for master']],
+    require => Exec['Create wildcard certificate'],
   }
 
   exec { 'Install registry':
     provider => 'shell',
     environment => 'HOME=/root',
     cwd     => "/root",
-    command => "osadm registry --create --credentials=/etc/openshift/master/openshift-registry.kubeconfig --images='registry.access.redhat.com/openshift3_beta/ose-\${component}:\${version}'",
+    command => "mkdir -p /mnt/registry && osadm registry --create \
+--credentials=/etc/openshift/master/openshift-registry.kubeconfig \
+--images='registry.access.redhat.com/openshift3_beta/ose-\${component}:\${version}' \
+--mount-host=/mnt/registry",
     unless => "osadm registry",
     timeout => 600,
     require => Exec['Install router'],
