@@ -8,7 +8,8 @@ class openshift3::dns {
   $ose_hosts = parsejson($::ose_hosts)
 
   class { 'dnsmasq':
-    no_hosts => true,    
+    no_hosts => true,
+    listen_address => ['127.0.0.1', $ipaddress_eth0, $ipaddress_eth1]
   }
 
   openshift3::add_dns_entries { $ose_hosts: }
@@ -34,5 +35,13 @@ class openshift3::dns {
     proto  => 'tcp',
     require => Package['iptables-services'],
     before => Service['dnsmasq'],
+  }
+
+  file { '/etc/dnsmasq.d/dnsmasq-extra.conf':
+    ensure  => present,
+    owner  => 'root',
+    group  => 'root',
+    mode   => 0600,
+    content => template("openshift3/etc/dnsmasq-extra.conf.erb"),
   }
 }
