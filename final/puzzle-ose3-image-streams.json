@@ -1,0 +1,27 @@
+{
+  "apiVersion": "v1beta1",
+  "kind": "ImageStreamList",
+  "items": [
+    {
+      "apiVersion": "v1beta1",
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "puzzle-ose3-docker-builder"
+      },
+      "spec": {
+        "dockerImageRepository": "default/puzzle-ose3-docker-builder",
+        "tags": [
+          {
+            "name": "latest",
+            "annotations": {
+              "description" : "Download artifact from artifactory",
+              "iconClass" : "icon-docker",
+              "tags" : "builder,docker,java",
+              "version" : "1"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

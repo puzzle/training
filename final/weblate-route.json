@@ -1,0 +1,13 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "weblate-route"
+  },
+  "spec": {
+    "host": "weblate.cloudapps.example.com",
+    "to": {
+      "name": "weblate"
+    }
+  }
+}

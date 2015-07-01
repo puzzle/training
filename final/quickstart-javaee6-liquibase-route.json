@@ -1,0 +1,10 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1beta1",
+      "metadata": {
+        "name": "javaee6-route"
+      },
+  "id": "javaee6-route",
+  "host": "quickstart-javaee6.cloudapps.example.com",
+  "serviceName": "frontend"
+}

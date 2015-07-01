@@ -1,0 +1,13 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "opentdc-route"
+  },
+  "spec": {
+    "host": "opentdc.cloudapps.example.com",
+    "to": {
+      "name": "opentdc-services-install "
+    }
+  }
+}
