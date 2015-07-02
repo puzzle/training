@@ -87,7 +87,7 @@ class openshift3::master {
 
   exec {"Wait for master":
     require => Service["openshift-master"],
-    command => "/usr/bin/wget --spider --tries 30 --retry-connrefused --no-check-certificate https://localhost:8443/",
+    command => "/usr/bin/wget --spider --tries 60 --retry-connrefused --no-check-certificate https://localhost:8443/",
   }
 
   exec { "Create wildcard certificate":
@@ -106,7 +106,8 @@ class openshift3::master {
     provider => 'shell',
     environment => 'HOME=/root',
     cwd     => "/root",
-    command => "oadm router --default-cert=cloudapps.router.pem \
+#    command => "oadm router --default-cert=cloudapps.router.pem \
+    command => "oadm router \
 --credentials=/etc/openshift/master/openshift-router.kubeconfig \
 --images='registry.access.redhat.com/openshift3/ose-\${component}:\${version}'",
     unless => "oadm router",
@@ -118,10 +119,10 @@ class openshift3::master {
     provider => 'shell',
     environment => 'HOME=/root',
     cwd     => "/root",
-    command => "mkdir -p /mnt/registry && oadm registry --create \
---credentials=/etc/openshift/master/openshift-registry.kubeconfig \
---images='registry.access.redhat.com/openshift3/ose-\${component}:\${version}' \
---mount-host=/mnt/registry",
+    command => "mkdir -p /mnt/registry && oadm registry --config=/etc/openshift/master/admin.kubeconfig \
+      --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
+      --images='registry.access.redhat.com/openshift3/ose-\${component}:\${version}' \
+      --mount-host=/mnt/registry",
     unless => "oadm registry",
     timeout => 600,
     require => Exec['Install router'],
