@@ -121,8 +121,8 @@ class openshift3::master {
     cwd     => "/root",
     command => "mkdir -p /mnt/registry && oadm registry --config=/etc/openshift/master/admin.kubeconfig \
       --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-      --images='registry.access.redhat.com/openshift3/ose-\${component}:\${version}' \
-      --mount-host=/mnt/registry",
+      --images='registry.access.redhat.com/openshift3/ose-\${component}:\${version}'", # \
+#      --mount-host=/mnt/registry",
     unless => "oadm registry",
     timeout => 600,
     require => Exec['Install router'],
