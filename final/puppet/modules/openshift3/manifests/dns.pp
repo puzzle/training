@@ -14,8 +14,11 @@ class openshift3::dns {
 
   openshift3::add_dns_entries { $ose_hosts: }
 
-  # Add wildcard entry for OpenShift 3 apps
+  # Add wildcard entries for OpenShift 3 apps
   dnsmasq::address { ".cloudapps.$::domain":
+    ip => $::ipaddress_eth1,
+  }
+  dnsmasq::address { ".openshiftapps.com":
     ip => $::ipaddress_eth1,
   }
 
