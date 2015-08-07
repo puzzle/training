@@ -1,10 +1,20 @@
-class openshift3 ($ssh_key = undef) {
+class openshift3 ($version = undef, $package_version = undef, $ssh_key = undef) {
   stage { 'first':
     before => Stage['main'],
   }
 
   class { 'openshift3::network':
     stage => first
+  }
+
+  if $::operatingsystem == 'RedHat' {
+    rhsm_repo { 'rhel-server-7-ose-beta-rpms': 
+      ensure  => absent,
+    }
+
+    rhsm_repo { ['rhel-7-server-rpms', 'rhel-7-server-extras-rpms', 'rhel-7-server-optional-rpms', 'rhel-7-server-ose-3.0-rpms']: 
+      ensure  => present,
+    }
   }
 
 #  yumrepo { "centos-extras":
@@ -23,8 +33,12 @@ class openshift3 ($ssh_key = undef) {
     gpgkey => "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7",
   }
 
+  yum::versionlock { ["0:openshift-${package_version}.x86_64", "0:openshift-master-${package_version}.x86_64", "0:openshift-node-${package_version}.x86_64", "0:openshift-sdn-ovs-${package_version}.x86_64", "0:tuned-profiles-openshift-node-${package_version}.x86_64"]:
+    ensure => present,
+  }
+
 # , 'openvswitch', 'iptables-services', 'bridge-utils', 'iptables'
-  package { ['deltarpm', 'wget', 'vim-enhanced', 'net-tools', 'bind-utils', 'git', 'iptables-services', 'bridge-utils' ]:
+  package { ['docker', 'deltarpm', 'wget', 'vim-enhanced', 'net-tools', 'bind-utils', 'git', 'iptables-services', 'bridge-utils' ]:
     ensure => present,
   }
 
@@ -33,22 +47,10 @@ class openshift3 ($ssh_key = undef) {
 #    require => Yumrepo['centos-extras'],
 #  }
 
-
-  # Workaround missing source support for yum provider
-#  exec { 'Install ansible':
-#    provider => 'shell',
-#    environment => 'HOME=/root',
-#    cwd     => "/root",
-#    command => "yum -y --enablerepo=epel install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm",
-#    unless => "rpm -q ansible",
-#    timeout => 120,
-#    require => Yumrepo['epel'],
-#  }  
-
-  package { 'ansible':
+  package { ['ansible', 'jq']:
     ensure => present,
     install_options => '--enablerepo=epel',
-    require => [Yumrepo['epel']] #, Exec['Install ansible']],
+    require => Yumrepo['epel'],
   }
 
 #  service { 'firewalld':
@@ -86,33 +88,39 @@ class openshift3 ($ssh_key = undef) {
 #    source => "puppet:///modules/openshift3/root/.bash_profile",
 #  }
 
-  class { 'docker':
-    extra_parameters => "--insecure-registry 0.0.0.0/0 --selinux-enabled",
+#   service { 'docker':       
+#     ensure => running,
+#     enable => true,
+#   }
+   
+#  class { 'docker':
+#    socket_bind => undef,
+#    extra_parameters => "--insecure-registry 172.30.0.0/16 --selinux-enabled",
+#  }
+
+  if $::vagrant {
+    exec { 'Import docker images':
+      cwd     => "/vagrant",
+      command => "/vagrant/puppet/import-docker",
+      creates => "/.docker_imported",
+      timeout => 1000,
+    } -> Docker::Image <| |>
   }
 
-  exec { 'Import docker images':
-    cwd     => "/vagrant",
-    command => "/vagrant/puppet/import-docker",
-    command => "touch /.docker_imported",
-    creates => "/.docker_imported",
-    timeout => 1000,
-    require => Service['docker'],
-  }
-
-  docker::image { [
-    'registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-deployer:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-pod:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1',
+  
+#  docker::image { [
+#    'registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1',
+#    "registry.access.redhat.com/openshift3/ose-deployer:v${::openshift3::version}",
+#    'registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.1',
+#    'registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.1',
+#    "registry.access.redhat.com/openshift3/ose-pod:v${::openshift3::version}",
+#    'registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1',
 #    'registry.access.redhat.com/openshift3/sti-basicauthurl:latest',
 #    'openshift/ruby-20-centos',
 #    'mysql',
 #    'openshift/hello-openshift',
-    ]:
-    require => Exec['Import docker images'],
-  }
+#    ]:
+#  }
 
   if $::vagrant {
     ssh_authorized_key { "${ssh_key[name]}":
