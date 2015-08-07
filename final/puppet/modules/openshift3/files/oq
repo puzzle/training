@@ -1,0 +1,18 @@
+#!/bin/bash
+
+RESOURCE="$1"
+OPERATION="$2"
+EXPRESSION="$3"
+
+case "$OPERATION" in
+  '?')
+    [ `oc get "$RESOURCE" -o json | jq "$EXPRESSION"` == "true" ]
+    ;;
+  '!')
+    oc get "$RESOURCE" -o json | jq "$EXPRESSION" | oc update "$RESOURCE" -f -
+    ;;
+  *)
+    echo "Undefined operation '$OPERATION'!" >&2
+    exit 1
+    ;;
+esac

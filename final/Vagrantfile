@@ -74,6 +74,7 @@ Vagrant.configure(2) do |config|
 
 #    sudo puppet module list >/tmp/puppet-module-list
 
+    sudo yum install -y deltarpm git
     sudo puppet module install puppetlabs-concat --version 1.2.0
     sudo puppet module install garethr/docker --version 4.0.1
     sudo puppet module install lex/dnsmasq 2>/dev/null
@@ -82,6 +83,8 @@ Vagrant.configure(2) do |config|
     sudo puppet module install puppetlabs/vcsrepo
     sudo puppet module install puppetlabs/firewall
     sudo puppet module install leinaddm/htpasswd
+    sudo puppet module install ceritsc/yum
+    cd /etc/puppet/modules && [ -e subscription_manager ] || git clone https://github.com/jlaska/puppet-subscription_manager.git subscription_manager
   SHELL
 
   hosts.each do |host|
@@ -98,7 +101,7 @@ Vagrant.configure(2) do |config|
     end 
   end
 
-  config.puppet_install.puppet_version = "3.5.1"
+  config.puppet_install.puppet_version = "3.8.1"
 
   config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_udp: false
 

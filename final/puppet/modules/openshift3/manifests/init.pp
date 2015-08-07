@@ -1,4 +1,4 @@
-class openshift3 ($ssh_key = undef) {
+class openshift3 ($version = undef, $package_version = undef, $ssh_key = undef) {
   stage { 'first':
     before => Stage['main'],
   }
@@ -33,8 +33,12 @@ class openshift3 ($ssh_key = undef) {
     gpgkey => "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7",
   }
 
+  yum::versionlock { ["0:openshift-${package_version}.x86_64", "0:openshift-master-${package_version}.x86_64", "0:openshift-node-${package_version}.x86_64", "0:openshift-sdn-ovs-${package_version}.x86_64", "0:tuned-profiles-openshift-node-${package_version}.x86_64"]:
+    ensure => present,
+  }
+
 # , 'openvswitch', 'iptables-services', 'bridge-utils', 'iptables'
-  package { ['deltarpm', 'wget', 'vim-enhanced', 'net-tools', 'bind-utils', 'git', 'iptables-services', 'bridge-utils' ]:
+  package { ['docker', 'deltarpm', 'wget', 'vim-enhanced', 'net-tools', 'bind-utils', 'git', 'iptables-services', 'bridge-utils' ]:
     ensure => present,
   }
 
@@ -43,7 +47,7 @@ class openshift3 ($ssh_key = undef) {
 #    require => Yumrepo['centos-extras'],
 #  }
 
-  package { 'ansible':
+  package { ['ansible', 'jq']:
     ensure => present,
     install_options => '--enablerepo=epel',
     require => Yumrepo['epel'],
@@ -84,9 +88,15 @@ class openshift3 ($ssh_key = undef) {
 #    source => "puppet:///modules/openshift3/root/.bash_profile",
 #  }
 
-  class { 'docker':
-    extra_parameters => "--insecure-registry 0.0.0.0/0 --selinux-enabled",
-  }
+#   service { 'docker':       
+#     ensure => running,
+#     enable => true,
+#   }
+   
+#  class { 'docker':
+#    socket_bind => undef,
+#    extra_parameters => "--insecure-registry 172.30.0.0/16 --selinux-enabled",
+#  }
 
   if $::vagrant {
     exec { 'Import docker images':
@@ -94,24 +104,23 @@ class openshift3 ($ssh_key = undef) {
       command => "/vagrant/puppet/import-docker",
       creates => "/.docker_imported",
       timeout => 1000,
-      require => Service['docker'],
-      before => Docker::Image <| |>,
-    }
+    } -> Docker::Image <| |>
   }
 
-  docker::image { [
-    'registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-deployer:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-pod:v3.0.0.1',
-    'registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1',
+  
+#  docker::image { [
+#    'registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1',
+#    "registry.access.redhat.com/openshift3/ose-deployer:v${::openshift3::version}",
+#    'registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.1',
+#    'registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.1',
+#    "registry.access.redhat.com/openshift3/ose-pod:v${::openshift3::version}",
+#    'registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1',
 #    'registry.access.redhat.com/openshift3/sti-basicauthurl:latest',
 #    'openshift/ruby-20-centos',
 #    'mysql',
 #    'openshift/hello-openshift',
-    ]:
-  }
+#    ]:
+#  }
 
   if $::vagrant {
     ssh_authorized_key { "${ssh_key[name]}":

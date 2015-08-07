@@ -1,6 +1,10 @@
 class openshift3::master {
   include ::openshift3
 
+  package { 'openshift-master':
+    ensure => latest,
+  }
+
   if $::vagrant {
     include ::openshift3::dns
 
@@ -45,7 +49,8 @@ class openshift3::master {
     require => Vcsrepo['/root/openshift-ansible'],
   }
 
-   $_ansible_require = [Class['openshift3'], Service['docker'], Package['ansible'],Augeas['ansible.cfg']]
+   $_ansible_require = [Class['openshift3'], Package['ansible'],Augeas['ansible.cfg']]
+#   $_ansible_require = [Class['openshift3'], Service['docker'], Package['ansible'],Augeas['ansible.cfg']]
    if $::vagrant {
       $ansible_require = concat($_ansible_require, File['/root/.ssh/id_rsa'], Ssh_Authorized_Key['ose3'])
    } else {
@@ -55,9 +60,26 @@ class openshift3::master {
   exec { 'Run ansible':
     cwd     => "/root/openshift-ansible",
     command => "ansible-playbook playbooks/byo/config.yml",
+#    command => "true",
     timeout => 1000,
     require => $ansible_require,
-  }
+  } ->
+
+  docker::image { [
+#    'registry.access.redhat.com/openshift3/ose-haproxy-router:v3.0.0.1',
+    "registry.access.redhat.com/openshift3/ose-deployer",
+#    'registry.access.redhat.com/openshift3/ose-sti-builder:v3.0.0.1',
+#    'registry.access.redhat.com/openshift3/ose-docker-builder:v3.0.0.1',
+    "registry.access.redhat.com/openshift3/ose-pod",
+#    'registry.access.redhat.com/openshift3/ose-docker-registry:v3.0.0.1',
+#    'registry.access.redhat.com/openshift3/sti-basicauthurl:latest',
+#    'openshift/ruby-20-centos',
+#    'mysql',
+#    'openshift/hello-openshift',
+    ]:
+    image_tag => "v${::openshift3::version}",
+#    require => Exec['Run ansible'],    
+  } ->
 
 #  exec { 'Edit master.yaml':
 #    cwd     => "/etc/openshift",
@@ -67,9 +89,9 @@ class openshift3::master {
 #    notify => Service['openshift-master'],
 #  }
 
-  service { 'openshift-master':
-    require => [Class['openshift3'], Exec['Run ansible']],
-  }
+#  service { 'openshift-master':
+#    require => [Class['openshift3'], Exec['Run ansible']],
+#  }
 
 #  augeas { "openshift-master":
 #    lens    => "Shellvars.lns",
@@ -86,34 +108,38 @@ class openshift3::master {
 #  }
 
   exec {"Wait for master":
-    require => Service["openshift-master"],
+#    require => Service["openshift-master"],
     command => "/usr/bin/wget --spider --tries 60 --retry-connrefused --no-check-certificate https://localhost:8443/",
   }
 
-  exec { "Create wildcard certificate":
-    provider => 'shell',
-    environment => ['HOME=/root', 'CA=/etc/openshift/master'],
-    cwd     => "/root",
-    command => "oadm create-server-cert --signer-cert=\$CA/ca.crt \
-      --signer-key=\$CA/ca.key --signer-serial=\$CA/ca.serial.txt \
-      --hostnames='*.cloudapps.example.com' \
-      --cert=cloudapps.crt --key=cloudapps.key && cat cloudapps.crt cloudapps.key \$CA/ca.crt > cloudapps.router.pem",
-    creates => '/root/cloudapps.router.pem',
-    require => [Service['openshift-master'], Exec['Run ansible'], Exec['Wait for master']],
+  class { 'openshift3::router':
+    require => [Class['openshift3'], Exec['Wait for master']],
   }
 
-  exec { 'Install router':
-    provider => 'shell',
-    environment => 'HOME=/root',
-    cwd     => "/root",
-#    command => "oadm router --default-cert=cloudapps.router.pem \
-    command => "oadm router \
---credentials=/etc/openshift/master/openshift-router.kubeconfig \
---images='registry.access.redhat.com/openshift3/ose-\${component}:\${version}'",
-    unless => "oadm router",
-    timeout => 600,
-    require => Exec['Create wildcard certificate'],
-  }
+#  exec { "Create wildcard certificate":
+#    provider => 'shell',
+#    environment => ['HOME=/root', 'CA=/etc/openshift/master'],
+#    cwd     => "/root",
+#    command => "oadm create-server-cert --signer-cert=\$CA/ca.crt \
+#      --signer-key=\$CA/ca.key --signer-serial=\$CA/ca.serial.txt \
+#      --hostnames='*.cloudapps.example.com' \
+#      --cert=cloudapps.crt --key=cloudapps.key && cat cloudapps.crt cloudapps.key \$CA/ca.crt > cloudapps.router.pem",
+#    creates => '/root/cloudapps.router.pem',
+#    require => [Service['openshift-master'], Exec['Run ansible'], Exec['Wait for master']],
+#  }
+
+#  exec { 'Install router':
+#    provider => 'shell',
+#    environment => 'HOME=/root',
+#    cwd     => "/root",
+##    command => "oadm router --default-cert=cloudapps.router.pem \
+#    command => "oadm router \
+#--credentials=/etc/openshift/master/openshift-router.kubeconfig \
+#--images='registry.access.redhat.com/openshift3/ose-\${component}:\${version}'",
+#    unless => "oadm router",
+#    timeout => 600,
+#    require => Exec['Create wildcard certificate'],
+#  }
 
   exec { 'Install registry':
     provider => 'shell',
@@ -125,6 +151,7 @@ class openshift3::master {
 #      --mount-host=/mnt/registry",
     unless => "oadm registry",
     timeout => 600,
-    require => Exec['Install router'],
+    require => Class['openshift3::router'],
   }
 }
+
