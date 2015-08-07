@@ -7,6 +7,16 @@ class openshift3 ($ssh_key = undef) {
     stage => first
   }
 
+  if $::operatingsystem == 'RedHat' {
+    rhsm_repo { 'rhel-server-7-ose-beta-rpms': 
+      ensure  => absent,
+    }
+
+    rhsm_repo { ['rhel-7-server-rpms', 'rhel-7-server-extras-rpms', 'rhel-7-server-optional-rpms', 'rhel-7-server-ose-3.0-rpms']: 
+      ensure  => present,
+    }
+  }
+
 #  yumrepo { "centos-extras":
 #    name => 'centos-extras',
 #    baseurl => "http://mirror.centos.org/centos/7/extras/x86_64/",
@@ -33,22 +43,10 @@ class openshift3 ($ssh_key = undef) {
 #    require => Yumrepo['centos-extras'],
 #  }
 
-
-  # Workaround missing source support for yum provider
-#  exec { 'Install ansible':
-#    provider => 'shell',
-#    environment => 'HOME=/root',
-#    cwd     => "/root",
-#    command => "yum -y --enablerepo=epel install https://kojipkgs.fedoraproject.org//packages/ansible/1.8.4/1.el7/noarch/ansible-1.8.4-1.el7.noarch.rpm",
-#    unless => "rpm -q ansible",
-#    timeout => 120,
-#    require => Yumrepo['epel'],
-#  }  
-
   package { 'ansible':
     ensure => present,
     install_options => '--enablerepo=epel',
-    require => [Yumrepo['epel']] #, Exec['Install ansible']],
+    require => Yumrepo['epel'],
   }
 
 #  service { 'firewalld':
@@ -90,13 +88,15 @@ class openshift3 ($ssh_key = undef) {
     extra_parameters => "--insecure-registry 0.0.0.0/0 --selinux-enabled",
   }
 
-  exec { 'Import docker images':
-    cwd     => "/vagrant",
-    command => "/vagrant/puppet/import-docker",
-    command => "touch /.docker_imported",
-    creates => "/.docker_imported",
-    timeout => 1000,
-    require => Service['docker'],
+  if $::vagrant {
+    exec { 'Import docker images':
+      cwd     => "/vagrant",
+      command => "/vagrant/puppet/import-docker",
+      creates => "/.docker_imported",
+      timeout => 1000,
+      require => Service['docker'],
+      before => Docker::Image <| |>,
+    }
   }
 
   docker::image { [
@@ -111,7 +111,6 @@ class openshift3 ($ssh_key = undef) {
 #    'mysql',
 #    'openshift/hello-openshift',
     ]:
-    require => Exec['Import docker images'],
   }
 
   if $::vagrant {
