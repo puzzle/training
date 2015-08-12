@@ -57,9 +57,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.provision "shell", inline: <<-SHELL
-#    function puppet_module_install {
-#      grep -q 
-#    }
+    sudo yum install -y deltarpm git
 
     if ! test -e /.subscribed; then
       sudo subscription-manager remove --all
@@ -74,7 +72,6 @@ Vagrant.configure(2) do |config|
 
 #    sudo puppet module list >/tmp/puppet-module-list
 
-    sudo yum install -y deltarpm git
     sudo puppet module install puppetlabs-concat --version 1.2.0
     sudo puppet module install garethr/docker --version 4.0.1
     sudo puppet module install lex/dnsmasq 2>/dev/null

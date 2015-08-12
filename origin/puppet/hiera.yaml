@@ -3,6 +3,7 @@
   - yaml
 
 :hierarchy:
+  - "common"
   - "ssh"
 
 :yaml:

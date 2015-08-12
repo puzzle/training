@@ -6,10 +6,11 @@ define openshift3::add_dns_entries($host = $title) {
 
 class openshift3::dns {
   $ose_hosts = parsejson($::ose_hosts)
+  $master_ip = $ose_hosts[0]['ip']
 
   class { 'dnsmasq':
     no_hosts => true,
-    listen_address => ['0.0.0.0']
+    listen_address => [$master_ip]
   }
 
   openshift3::add_dns_entries { $ose_hosts: }
@@ -46,5 +47,6 @@ class openshift3::dns {
     group  => 'root',
     mode   => 0600,
     content => template("openshift3/etc/dnsmasq-extra.conf.erb"),
+    notify => Service['dnsmasq'],
   }
 }

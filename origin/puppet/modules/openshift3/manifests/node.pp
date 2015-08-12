@@ -10,7 +10,7 @@ class openshift3::node {
 
   if $::vagrant {
     $ose_hosts = parsejson($::ose_hosts)
-    $master_fqdn = $ose_hosts[0]['hostname']
+    $master_ip = $ose_hosts[0]['ip']
 
     file { '/root/.ssh/id_rsa':
       ensure  => present,
@@ -37,7 +37,7 @@ class openshift3::node {
 
     class { 'resolv_conf':
       domainname => '.',
-      nameservers => [$::network_primary_ip, '8.8.8.8', '8.8.4.4'],  # Use Google Public DNS as forwarder
+      nameservers => [$master_ip, '8.8.8.8', '8.8.4.4'],  # Use Google Public DNS as forwarder
       require => $resolv_require,
     }
   }

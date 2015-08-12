@@ -59,9 +59,16 @@ Vagrant.configure(2) do |config|
     libvirt.cpus = 4
   end
 
+  config.vm.provider :virtualbox do |vbox|
+    vbox.memory = 8192
+    vbox.cpus = 8
+  end
+
   config.vm.provision "shell", inline: <<-SHELL
     test -e /usr/bin/ne || rpm -i http://devzone.ch/~tschan/ne-2.6-1.x86_64.rpm
-    yum install -y git
+    yum install -y deltarpm git
+
+    yum update -y
 
 #    function puppet_module_install {
 #      grep -q 
@@ -78,7 +85,9 @@ Vagrant.configure(2) do |config|
     sudo puppet module install puppetlabs/firewall
     sudo puppet module install leinaddm/htpasswd
 #    sudo puppet module install adrien/network
+    sudo puppet module install ceritsc/yum
     sudo /bin/sh -c "cd /etc/puppet/modules && [ -e network ] || git clone https://github.com/puppet-community/puppet-network.git network && cd network && git checkout master"
+    cd /etc/puppet/modules && [ -e subscription_manager ] || git clone https://github.com/jlaska/puppet-subscription_manager.git subscription_manager
   SHELL
 
   hosts.each do |host|
@@ -107,6 +116,7 @@ Vagrant.configure(2) do |config|
       "vagrant" => "1",
       "ose_hosts" => hosts.to_json,
     }
+    puppet.options = "--verbose"
   end
 
 end
